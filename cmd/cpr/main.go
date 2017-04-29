@@ -25,7 +25,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(url)
+	info, err := cpr.GetRepoInfo(url)
+	if err != nil {
+		return err
+	}
+	fmt.Println(info)
 	err = options.Validate()
 	if err != nil {
 		return err
@@ -34,7 +38,7 @@ func run() error {
 }
 
 func init() {
-	opts, err := cpr.ParseFlags(flag.CommandLine, os.Args[1:])
+	opts, err := cpr.ParseOptions(flag.CommandLine, os.Args[1:])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(-1)

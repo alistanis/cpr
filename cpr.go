@@ -1,6 +1,7 @@
 package cpr
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 	"os"
@@ -13,14 +14,17 @@ import (
 
 	"flag"
 
+	"time"
+
 	"github.com/google/go-github/github"
 	"golang.org/x/crypto/ssh/terminal"
 	git "gopkg.in/src-d/go-git.v4"
 )
 
 var (
-	ErrNoGitParent    = errors.New("Could not find a parent git directory.")
-	ErrNoGithubRemote = errors.New("No github remote could be found for the current git repository.")
+	ErrNoGitParent            = errors.New("Could not find a parent git directory.")
+	ErrNoGithubRemote         = errors.New("No github remote could be found for the current git repository.")
+	ErrMalformedRepositoryUrl = errors.New("Could not parse the repository url.")
 )
 
 // Open recursively searches backwards for a git repository root. If it finds one, it returns that repository object.
@@ -66,6 +70,28 @@ func GithubURL(r *git.Repository) (string, error) {
 	return "", ErrNoGithubRemote
 }
 
+type RepoInfo struct {
+	Owner      string
+	Repository string
+}
+
+func GetRepoInfo(s string) (*RepoInfo, error) {
+	if !strings.Contains(s, "github") {
+		return nil, ErrNoGithubRemote
+	}
+
+	s = strings.TrimPrefix(s, "github.com/")
+
+	r := &RepoInfo{}
+	split := strings.Split(s, "/")
+	if len(split) < 2 {
+		return nil, ErrMalformedRepositoryUrl
+	}
+	r.Owner = split[0]
+	r.Repository = split[1]
+	return r, nil
+}
+
 type Config struct {
 	User     string
 	Password string
@@ -92,8 +118,8 @@ func ReadConfigFromFile(path string) (*Config, error) {
 	return c, json.Unmarshal(data, c)
 }
 
-func (c *Config) GetTransport() *github.BasicAuthTransport {
-	return &github.BasicAuthTransport{Username: c.User, Password: c.Password}
+func (o *Options) Transport() *github.BasicAuthTransport {
+	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
 }
 
 func GetPasswd() (string, error) {
@@ -111,6 +137,11 @@ type Options struct {
 	Reviewers     []string
 	Assignees     []string
 	Comment       string
+	UserName      string
+	Password      string
+	ConfigFile    string
+	Title         string
+	Body          string
 	FlagSet       *flag.FlagSet
 }
 
@@ -129,19 +160,48 @@ func (o *Options) Validate() error {
 	return nil
 }
 
-func ParseFlags(f *flag.FlagSet, args []string) (*Options, error) {
+func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response, error) {
+	transport := o.Transport()
+	client := github.NewClient(transport.Client())
+
+	service := client.PullRequests
+	ctx, cancel := context.WithTimeout(nil, time.Second*15)
+	defer cancel()
+	pr := &github.NewPullRequest{}
+	pr.Base = &o.BaseBranch
+	pr.Head = &o.CompareBranch
+	pr.Title = &o.Title
+	*pr.MaintainerCanModify = true
+	if o.Body != "" {
+		pr.Body = &o.Body
+	}
+	info, err := GetRepoInfo(url)
+	if err != nil {
+		return nil, nil, err
+	}
+	return service.Create(ctx, info.Owner, info.Repository, pr)
+}
+
+func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	o := &Options{}
 	o.FlagSet = f
 	f.StringVar(&o.BaseBranch, "base-branch", "", "The base branch to merge into (master|develop|release|staging) (Required)")
 	f.StringVar(&o.CompareBranch, "compare-branch", "", "The branch you are attempting to merge (feature|bugfix) (Required)")
 
 	var reviewersString string
-	f.StringVar(&reviewersString, "reviewers", "", "A comma separated list of reviewers (Chris,Paul)")
-	f.StringVar(&reviewersString, "r", "", "A comma separated list of reviewers (Chris,Paul)")
+	f.StringVar(&reviewersString, "reviewers", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
+	f.StringVar(&reviewersString, "r", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 
 	var assigneesString string
-	f.StringVar(&assigneesString, "assignees", "", "A comma separated list of assignees (Chris,Dan)")
-	f.StringVar(&assigneesString, "a", "", "A comma separated list of assignees (Chris,Dan)")
+	f.StringVar(&assigneesString, "assignees", "", "A comma separated list of assignees (Chris,Dan) (Optional)")
+	f.StringVar(&assigneesString, "a", "", "A comma separated list of assignees (Chris,Dan) (Optional)")
+
+	f.StringVar(&o.UserName, "user", "", "Github username (alistanis) (Optional)")
+	f.StringVar(&o.Password, "pass", "", "Github password (asckoq14rf0n!@$) (Optional)")
+	f.StringVar(&o.ConfigFile, "config", "cpr.json", "Config file location for this repository (Optional)")
+
+	f.StringVar(&o.Title, "title", "", "The title of this pull request (Required)")
+	f.StringVar(&o.Body, "body", "", "The description of this pull request (Optional)")
 
 	err := f.Parse(args)
 	if err != nil {
