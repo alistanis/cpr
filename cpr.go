@@ -202,7 +202,6 @@ type Options struct {
 	BaseBranch     string
 	CompareBranch  string
 	Reviewers      []string
-	Assignees      []string
 	Comment        string
 	UserName       string
 	Password       string
@@ -247,11 +246,17 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	if o.Body != "" {
 		pr.Body = &o.Body
 	}
+
 	info, err := GetRepoInfo(url)
 	if err != nil {
 		return nil, nil, err
 	}
-	return service.Create(ctx, info.Owner, info.Repository, pr)
+	pull, _, err := service.Create(ctx, info.Owner, info.Repository, pr)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return service.RequestReviewers(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Reviewers)
 }
 
 func RemoveNewlines(s string) string {
@@ -323,10 +328,6 @@ func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	f.StringVar(&reviewersString, "reviewers", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 	f.StringVar(&reviewersString, "r", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 
-	var assigneesString string
-	f.StringVar(&assigneesString, "assignees", "", "A comma separated list of assignees (Chris,Dan) (Optional)")
-	f.StringVar(&assigneesString, "a", "", "A comma separated list of assignees (Chris,Dan) (Optional)")
-
 	f.StringVar(&o.UserName, "user", "", "Github username (alistanis) (Optional)")
 	f.StringVar(&o.Password, "pass", "", "Github password (asckoq14rf0n!@$) (Optional)")
 
@@ -340,6 +341,5 @@ func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	}
 
 	o.Reviewers = strings.Split(reviewersString, ",")
-	o.Assignees = strings.Split(assigneesString, ",")
 	return o, nil
 }
