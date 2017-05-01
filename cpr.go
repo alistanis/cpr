@@ -186,7 +186,6 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func (o *Options) Transport() *github.BasicAuthTransport {
-	fmt.Println(o)
 	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
 }
 
