@@ -186,6 +186,7 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func (o *Options) Transport() *github.BasicAuthTransport {
+	fmt.Println(o)
 	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
 }
 
@@ -242,7 +243,8 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	pr.Base = &o.BaseBranch
 	pr.Head = &o.CompareBranch
 	pr.Title = &o.Title
-	*pr.MaintainerCanModify = true
+	modify := true
+	pr.MaintainerCanModify = &modify
 	if o.Body != "" {
 		pr.Body = &o.Body
 	}
