@@ -28,7 +28,6 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(options)
 	if options.UserName == "" || options.Password == "" {
 		home, err := cpr.HomeDir()
 		if err != nil {
@@ -47,7 +46,8 @@ func run() error {
 
 	pr, _, err := options.PullRequest(url)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		os.Exit(-1)
 	}
 	fmt.Println(pr.GetTitle(), " was created at ", pr.GetCreatedAt(), " by ", pr.User.GetLogin())
 	if len(pr.Assignees) > 0 {
