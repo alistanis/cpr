@@ -14,8 +14,6 @@ import (
 
 	"flag"
 
-	"time"
-
 	"fmt"
 
 	"bufio"
@@ -238,8 +236,8 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	client := github.NewClient(transport.Client())
 
 	service := client.PullRequests
-	ctx, cancel := context.WithTimeout(nil, time.Second*15)
-	defer cancel()
+	ctx := context.Background()
+
 	pr := &github.NewPullRequest{}
 	pr.Base = &o.BaseBranch
 	pr.Head = &o.CompareBranch
