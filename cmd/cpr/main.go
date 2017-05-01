@@ -49,7 +49,7 @@ func run() error {
 		fmt.Println(err)
 		os.Exit(-1)
 	}
-	fmt.Println(pr.GetTitle(), " was created at ", pr.GetCreatedAt(), " by ", pr.User)
+	fmt.Println(pr.GetTitle(), " was created at ", pr.GetCreatedAt(), " by ", pr.User.GetLogin())
 	if len(pr.Assignees) > 0 {
 		fmt.Println("Assignees:")
 		for _, a := range pr.Assignees {
