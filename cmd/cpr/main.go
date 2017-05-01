@@ -6,6 +6,8 @@ import (
 
 	"flag"
 
+	"path/filepath"
+
 	"github.com/alistanis/cpr"
 )
 
@@ -16,6 +18,7 @@ func main() {
 }
 
 func run() error {
+
 	r, err := cpr.Open(".")
 	if err != nil {
 		return err
@@ -25,15 +28,29 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	info, err := cpr.GetRepoInfo(url)
+	fmt.Println(options)
+	if options.UserName == "" || options.Password == "" {
+		home, err := cpr.HomeDir()
+		if err != nil {
+			return err
+		}
+
+		configFile := filepath.Join(home, cpr.ConfigFileName)
+
+		c, err := cpr.LoadConfig(configFile)
+		if err != nil {
+			return err
+		}
+		options.UserName = c.User
+		options.Password = string(c.Password)
+	}
+
+	pr, resp, err := options.PullRequest(url)
 	if err != nil {
 		return err
 	}
-	fmt.Println(info)
-	err = options.Validate()
-	if err != nil {
-		return err
-	}
+	fmt.Println(pr)
+	fmt.Println(resp)
 	return nil
 }
 
@@ -44,6 +61,17 @@ func init() {
 		os.Exit(-1)
 	}
 	options = opts
+
+	if options.GenerateConfig {
+		checkAndExit(cpr.GenerateConfig())
+	}
+
+	err = options.Validate()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(-1)
+	}
+
 }
 
 func checkAndExit(err error) {
