@@ -290,13 +290,13 @@ func GenerateConfig() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Please enter your password.")
+	fmt.Println("Please enter your github api key.")
 	pass, err := GetPasswd()
 	if err != nil {
 		return err
 	}
 	c.Password = []byte(pass)
-	fmt.Println("Would you like to use encryption for your password? (y/n)")
+	fmt.Println("Would you like to use encryption for your api key? (y/n)")
 	useEnc, err := reader.ReadString('\n')
 	if err != nil {
 		return err
@@ -332,7 +332,7 @@ func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	f.StringVar(&reviewersString, "r", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 
 	f.StringVar(&o.UserName, "user", "", "Github username (alistanis) (Optional)")
-	f.StringVar(&o.Password, "pass", "", "Github password (asckoq14rf0n!@$) (Optional)")
+	f.StringVar(&o.Password, "pass", "", "Github api key (asckoq14rf0n!@$) (Optional)")
 
 	f.StringVar(&o.Title, "title", "", "The title of this pull request (Required)")
 	f.StringVar(&o.Body, "body", "", "The description of this pull request (Optional)")
