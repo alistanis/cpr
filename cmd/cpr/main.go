@@ -45,12 +45,17 @@ func run() error {
 		options.Password = string(c.Password)
 	}
 
-	pr, resp, err := options.PullRequest(url)
+	pr, _, err := options.PullRequest(url)
 	if err != nil {
 		return err
 	}
-	fmt.Println(pr)
-	fmt.Println(resp)
+	fmt.Println(*pr.Title, " was created at ", *pr.CreatedAt, " by ", *pr.User.Name)
+	if len(pr.Assignees) > 0 {
+		fmt.Println("Assignees:")
+		for _, a := range pr.Assignees {
+			fmt.Println("\t", *a.Name)
+		}
+	}
 	return nil
 }
 

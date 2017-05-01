@@ -14,8 +14,6 @@ import (
 
 	"flag"
 
-	"time"
-
 	"fmt"
 
 	"bufio"
@@ -188,6 +186,7 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func (o *Options) Transport() *github.BasicAuthTransport {
+	fmt.Println(o)
 	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
 }
 
@@ -238,13 +237,14 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	client := github.NewClient(transport.Client())
 
 	service := client.PullRequests
-	ctx, cancel := context.WithTimeout(nil, time.Second*15)
-	defer cancel()
+	ctx := context.Background()
+
 	pr := &github.NewPullRequest{}
 	pr.Base = &o.BaseBranch
 	pr.Head = &o.CompareBranch
 	pr.Title = &o.Title
-	*pr.MaintainerCanModify = true
+	modify := true
+	pr.MaintainerCanModify = &modify
 	if o.Body != "" {
 		pr.Body = &o.Body
 	}
