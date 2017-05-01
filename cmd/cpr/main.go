@@ -49,11 +49,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(*pr.Title, " was created at ", *pr.CreatedAt, " by ", *pr.User.Name)
+	fmt.Println(pr.GetTitle(), " was created at ", pr.GetCreatedAt(), " by ", pr.User.GetLogin())
 	if len(pr.Assignees) > 0 {
 		fmt.Println("Assignees:")
 		for _, a := range pr.Assignees {
-			fmt.Println("\t", *a.Name)
+			fmt.Println("\t", a.GetLogin())
 		}
 	}
 	return nil
