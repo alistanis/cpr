@@ -251,12 +251,15 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	if err != nil {
 		return nil, nil, err
 	}
-	pull, _, err := service.Create(ctx, info.Owner, info.Repository, pr)
+	pull, resp, err := service.Create(ctx, info.Owner, info.Repository, pr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return service.RequestReviewers(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Reviewers)
+	if len(o.Reviewers) > 0 {
+		return service.RequestReviewers(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Reviewers)
+	}
+	return pull, resp, nil
 }
 
 func RemoveNewlines(s string) string {
