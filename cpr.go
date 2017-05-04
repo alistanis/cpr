@@ -198,6 +198,7 @@ type Options struct {
 	BaseBranch     string
 	CompareBranch  string
 	Reviewers      []string
+	Assignees      []string
 	Comment        string
 	UserName       string
 	Password       string
@@ -236,6 +237,15 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 	if len(o.Reviewers) > 0 {
 		return service.RequestReviewers(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Reviewers)
 	}
+
+	if len(o.Assignees) > 0 {
+		issueService := client.Issues
+		_, _, err = issueService.AddAssignees(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Assignees)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	return pull, resp, nil
 }
 
@@ -331,6 +341,10 @@ func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	f.StringVar(&reviewersString, "reviewers", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 	f.StringVar(&reviewersString, "r", "", "A comma separated list of reviewers (Chris,Paul) (Optional)")
 
+	var assigneesString string
+	f.StringVar(&assigneesString, "assignees", "", "A comma separated list of assignees (alistanis,paulkernfeld)")
+	f.StringVar(&assigneesString, "a", "", "A comma separated list of assignees (alistanis,paulkernfeld)")
+
 	f.StringVar(&o.UserName, "user", "", "Github username (alistanis) (Optional)")
 	f.StringVar(&o.Password, "pass", "", "Github api key (asckoq14rf0n!@$) (Optional)")
 
@@ -344,5 +358,6 @@ func ParseOptions(f *flag.FlagSet, args []string) (*Options, error) {
 	}
 
 	o.Reviewers = strings.Split(reviewersString, ",")
+	o.Assignees = strings.Split(assigneesString, ",")
 	return o, nil
 }
