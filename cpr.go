@@ -185,10 +185,6 @@ func LoadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func (o *Options) Transport() *github.BasicAuthTransport {
-	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
-}
-
 func GetPasswd() (string, error) {
 	bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
@@ -209,25 +205,6 @@ type Options struct {
 	Body           string
 	GenerateConfig bool
 	FlagSet        *flag.FlagSet
-}
-
-var (
-	ErrNoBaseBranch    = errors.New("No base-branch was given, base-branch is required")
-	ErrNoCompareBranch = errors.New("No compare-branch was given, compare-branch is required")
-	ErrNoTitle         = errors.New("No title was given, title is required")
-)
-
-func (o *Options) Validate() error {
-	if o.BaseBranch == "" {
-		return ErrNoBaseBranch
-	}
-	if o.CompareBranch == "" {
-		return ErrNoCompareBranch
-	}
-	if o.Title == "" {
-		return ErrNoTitle
-	}
-	return nil
 }
 
 func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response, error) {
@@ -260,6 +237,29 @@ func (o *Options) PullRequest(url string) (*github.PullRequest, *github.Response
 		return service.RequestReviewers(ctx, info.Owner, info.Repository, pull.GetNumber(), o.Reviewers)
 	}
 	return pull, resp, nil
+}
+
+func (o *Options) Transport() *github.BasicAuthTransport {
+	return &github.BasicAuthTransport{Username: o.UserName, Password: o.Password}
+}
+
+var (
+	ErrNoBaseBranch    = errors.New("No base-branch was given, base-branch is required")
+	ErrNoCompareBranch = errors.New("No compare-branch was given, compare-branch is required")
+	ErrNoTitle         = errors.New("No title was given, title is required")
+)
+
+func (o *Options) Validate() error {
+	if o.BaseBranch == "" {
+		return ErrNoBaseBranch
+	}
+	if o.CompareBranch == "" {
+		return ErrNoCompareBranch
+	}
+	if o.Title == "" {
+		return ErrNoTitle
+	}
+	return nil
 }
 
 func RemoveNewlines(s string) string {
